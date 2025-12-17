@@ -15,15 +15,28 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.example.futbolchilefinal.R
 import com.example.futbolchilefinal.ui.navigation.Screen
+import com.example.futbolchilefinal.viewmodel.AuthViewModel
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val currentUser by authViewModel.currentUser.collectAsState()
 
-    // Correct colors for the latest Material 3 version
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            navController.navigate(Screen.Main.route) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
+        }
+    }
+
     val textFieldColors = TextFieldDefaults.colors(
         focusedTextColor = Color.White,
         unfocusedTextColor = Color.White,
@@ -76,10 +89,10 @@ fun LoginScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { /* TODO: Handle login logic */ },
+                onClick = { authViewModel.login(email, password) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    contentColor = Color.White // Set button text to white
+                    contentColor = Color.White
                 )
             ) {
                 Text("Iniciar Sesión")

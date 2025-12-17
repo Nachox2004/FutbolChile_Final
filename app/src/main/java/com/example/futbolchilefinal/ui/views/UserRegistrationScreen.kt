@@ -17,36 +17,49 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.example.futbolchilefinal.R
 import com.example.futbolchilefinal.ui.navigation.Screen
+import com.example.futbolchilefinal.viewmodel.AuthViewModel
 import com.example.futbolchilefinal.viewmodel.EquipoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserRegistrationScreen(navController: NavController) {
+fun UserRegistrationScreen(navController: NavController, authViewModel: AuthViewModel) {
     val equipoViewModel: EquipoViewModel = viewModel()
     val equipos by equipoViewModel.equipos.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            navController.navigate(Screen.Main.route) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
+        }
+    }
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
-    var selectedTeam by remember { mutableStateOf("") }
+    var selectedTeam by remember { mutableStateOf<Pair<String, String>>("" to "") }
 
     LaunchedEffect(Unit) {
         equipoViewModel.fetchEquipos()
     }
 
-    // Correct colors for the latest Material 3 version with enhanced readability
     val textFieldColors = TextFieldDefaults.colors(
         focusedTextColor = Color.White,
         unfocusedTextColor = Color.White,
         focusedContainerColor = Color.Black.copy(alpha = 0.3f),
         unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
         cursorColor = Color.White,
-        focusedIndicatorColor = Color.White,       // This is the new name for the border
-        unfocusedIndicatorColor = Color.Gray,    // This is the new name for the border
+        focusedIndicatorColor = Color.White,
+        unfocusedIndicatorColor = Color.Gray,
         focusedLabelColor = Color.White,
         unfocusedLabelColor = Color.LightGray
     )
@@ -83,7 +96,7 @@ fun UserRegistrationScreen(navController: NavController) {
 
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                 OutlinedTextField(
-                    value = selectedTeam,
+                    value = selectedTeam.first,
                     onValueChange = {},
                     label = { Text("Equipo Favorito") },
                     readOnly = true,
@@ -96,7 +109,7 @@ fun UserRegistrationScreen(navController: NavController) {
                         DropdownMenuItem(
                             text = { Text(equipo.nombre) },
                             onClick = {
-                                selectedTeam = equipo.nombre
+                                selectedTeam = equipo.nombre to (equipo.escudo?.path ?: "")
                                 expanded = false
                             }
                         )
@@ -107,12 +120,10 @@ fun UserRegistrationScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = {
-                    Log.d("FutbolChileApp", "Botón Registrarse presionado. Datos: Nombre=$name, Email=$email")
-                },
+                onClick = { authViewModel.register(email, password, name, selectedTeam.first, selectedTeam.second) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    contentColor = Color.White // Set button text to white
+                    contentColor = Color.White
                 )
             ) {
                 Text("Registrarse")

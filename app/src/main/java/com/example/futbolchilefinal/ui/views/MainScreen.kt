@@ -7,6 +7,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -19,11 +21,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.futbolchilefinal.R
 import com.example.futbolchilefinal.ui.navigation.Screen
+import com.example.futbolchilefinal.viewmodel.AuthViewModel
 
 @Composable
-fun MainScreen(navController: NavController) {
+fun MainScreen(navController: NavController, authViewModel: AuthViewModel) {
+    val currentUser by authViewModel.currentUser.collectAsState()
+
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.campo_futbol),
@@ -35,23 +41,46 @@ fun MainScreen(navController: NavController) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 24.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.End
+                .padding(top = 48.dp, start = 16.dp, end = 16.dp),
+            horizontalArrangement = if (currentUser != null) Arrangement.SpaceBetween else Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
-                onClick = { navController.navigate(Screen.Login.route) },
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black.copy(alpha = 0.8f),
-                    contentColor = Color.White
-                )
-            ) {
-                Text("Iniciar Sesión")
+            currentUser?.let { user ->
+                Column(horizontalAlignment = Alignment.Start) {
+                    Text("Hola buenas ${user.name} :} ", color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Image(
+                        painter = rememberAsyncImagePainter(user.favoriteTeamLogo),
+                        contentDescription = "Logo del equipo favorito",
+                        modifier = Modifier.size(64.dp)
+                    )
+                }
+                Button(
+                    onClick = { authViewModel.logout() },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black.copy(alpha = 0.8f),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Cerrar Sesión")
+                }
+            } ?: run {
+                Button(
+                    onClick = { navController.navigate(Screen.Login.route) },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black.copy(alpha = 0.8f),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Iniciar Sesión")
+                }
             }
         }
 
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(bottom = 100.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

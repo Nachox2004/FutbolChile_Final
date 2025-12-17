@@ -14,6 +14,10 @@ class EquipoViewModel : ViewModel() {
     private val repository = EquipoRepository()
     private val TAG = "FutbolChileApp"
 
+    companion object {
+        private const val XANO_BASE_URL = "https://x8ki-letl-twmt.n7.xano.io"
+    }
+
     private val _equipos = MutableStateFlow<List<Equipo>>(emptyList())
     val equipos: StateFlow<List<Equipo>> = _equipos
 
@@ -21,10 +25,18 @@ class EquipoViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 Log.d(TAG, "EquipoViewModel: Iniciando fetchEquipos...")
-                _equipos.value = repository.getEquipos()
-                Log.d(TAG, "EquipoViewModel: fetchEquipos completado con ${_equipos.value.size} items.")
+                val equiposFromRepo = repository.getEquipos()
+                val equiposConUrlCompleta = equiposFromRepo.map { equipo ->
+                    equipo.copy(
+                        escudo = equipo.escudo?.copy(
+                            path = equipo.escudo.path?.let { "$XANO_BASE_URL$it" }
+                        )
+                    )
+                }
+                _equipos.value = equiposConUrlCompleta
+                Log.d(TAG, "ViewModel: fetchEquipos completado con ${_equipos.value.size} items.")
             } catch (e: Exception) {
-                Log.e(TAG, "EquipoViewModel: Error fetching equipos: ", e)
+                Log.e(TAG, "ViewModel: Error fetching equipos: ", e)
             }
         }
     }
